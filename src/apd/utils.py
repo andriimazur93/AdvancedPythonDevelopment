@@ -11,6 +11,7 @@ T_value = TypeVar("T_value")
 class ReturnCodes(enum.IntEnum):
     OK = 0
     BAD_SENSOR_PATH = 17
+    BAD_CONFIG = 18
 
 
 class Sensor(Generic[T_value]):
