@@ -1,30 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 import math
-import socket
 import sys
-from typing import Any, Optional, List, Tuple, Iterable, TypeVar, Generic
-
+from typing import Any, Optional, List, Tuple, Iterable
 
 import click
 import psutil
 
-
-T_value = TypeVar("T_value")
-
-
-class Sensor(Generic[T_value]):
-    title: str
-
-    def value(self) -> T_value:
-        raise NotImplementedError
-
-    @classmethod
-    def format(cls, value: T_value) -> str:
-        raise NotImplementedError
-
-    def __str__(self) -> str:
-        return self.format(self.value())
+from apd.humidity_sensor.sensor import HumiditySensor
+from apd.thermometer.sensor import Thermometer
+from apd.utils import ReturnCodes, Sensor, SensorClassParameter
 
 
 class PythonVersion(Sensor[Any]):
@@ -104,54 +89,6 @@ class ACStatus(Sensor[Optional[bool]]):
             return "Not connected"
 
 
-class Temperature(Sensor[Optional[float]]):
-    title = "Ambient Temperature"
-
-    def value(self) -> Optional[float]:
-        try:
-            # Connect to a DHT22 on pin 4
-            from adafruit_dht import DHT22
-            from board import D4
-        except (ImportError, NotImplementedError):
-            # No DHT library results in an ImportError.
-            # Running on an unknown platform results in a
-            # NotImplementedError when getting the pin
-            return None
-        try:
-            return DHT22(D4).temperature
-        except RuntimeError:
-            return None
-
-    @staticmethod
-    def celsius_to_fahrenheit(value: float) -> float:
-        return value * 9 / 5 + 32
-
-    @classmethod
-    def format(cls, value: Optional[float]) -> str:
-        if value is None:
-            return "Unknown"
-        else:
-            return "{:.1f}C ({:.1f}F)".format(value, cls.celsius_to_fahrenheit(value))
-
-    def __str__(self) -> str:
-        return self.format(self.value())
-
-
-class RelativeHumidity(Sensor[Optional[float]]):
-    title = "Relative Humidity"
-
-    def value(self) -> Optional[float]:
-        import random
-        return random.randint(1, 100)
-
-    @classmethod
-    def format(cls, value: Optional[float]) -> str:
-        if value is None:
-            return "Unknown"
-        else:
-            return "{:.1%}".format(value)
-
-
 def get_sensors() -> Iterable[Sensor[Any]]:
     return [
         PythonVersion(),
@@ -159,29 +96,46 @@ def get_sensors() -> Iterable[Sensor[Any]]:
         CPULoad(),
         RAMAvailable(),
         ACStatus(),
-        Temperature(),
-        RelativeHumidity(),
+        HumiditySensor(),
+        Thermometer(),
     ]
+
 
 def get_sensor_by_path(sensor_path: str) -> Any:
     import importlib
-    module_name, sensor_name = sensor_path.split(":")
-    module = importlib.import_module(module_name)
-    return getattr(module, sensor_name)()
+    try:
+        module_name, sensor_name = sensor_path.split(":")
+    except ValueError:
+        raise RuntimeError("Sensor path must be in the format 'dotted.path.to.module:ClassName'")
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError:
+        raise RuntimeError(f"Could not import module {module_name}")
 
-@click.group()
-def sensors() -> None:
-    return None
+    try:
+        sensor_class = getattr(module, sensor_name)
+    except AttributeError:
+        raise RuntimeError(f"Cound not find attribute {sensor_name} in {module_name}")
+
+    if (isinstance(sensor_class, type) and issubclass(sensor_class, Sensor) and sensor_class != Sensor):
+        return sensor_class()
+    else:
+        raise RuntimeError(f"Detected object {sensor_class!r} is not recognized as a Sensor type")
+
 
 @click.command(help="Displays the values of the sensors")
 @click.option(
     "--develop", required=False, metavar="path",
-    help="Load a sensor by Python path"
+    help="Load a sensor by Python path", type=SensorClassParameter,
 )
 def show_sensors(develop: str) -> None:
     sensors: Iterable[Sensor[Any]]
     if develop:
-        sensors = [get_sensor_by_path(develop)]
+        try:
+            sensors = [develop]
+        except RuntimeError as error:
+            click.secho(str(error), fg='red', bold=True, err=True)
+            sys.exit(ReturnCodes.BAD_SENSOR_PATH)
     else:
         sensors = get_sensors()
     for sensor in sensors:

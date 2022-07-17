@@ -1,6 +1,6 @@
 import typing as t
 
-from apd.sensors.sensors import Sensor
+from apd.utils import Sensor
 
 bt_addr = "00:80:25:00:00:00"
 

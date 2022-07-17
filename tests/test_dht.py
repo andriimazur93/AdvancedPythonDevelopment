@@ -1,16 +1,17 @@
 import pytest
 
-from apd.sensors.sensors import Temperature, RelativeHumidity
+from apd.thermometer.sensor import Thermometer
+from apd.humidity_sensor.sensor import HumiditySensor
 
 
 @pytest.fixture
 def temperature_sensor():
-    return Temperature()
+    return Thermometer()
 
 
 @pytest.fixture
 def humidity_sensor():
-    return RelativeHumidity()
+    return HumiditySensor()
 
 
 class TestTemperatureFormatter:
