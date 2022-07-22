@@ -12,6 +12,6 @@ def test_sensors():
 @pytest.mark.functional
 def test_python_version_is_first_two_lines_of_cli_output():
     runner = CliRunner()
-    result = runner.invoke(apd.sensors.sensors.show_sensors)
+    result = runner.invoke(apd.sensors.cli.show_sensors)
     python_version = str(apd.sensors.sensors.PythonVersion())
     assert ["Python Version", python_version] == result.stdout.split("\n")[:2]

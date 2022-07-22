@@ -63,6 +63,8 @@ def get_sensors_entry_points() -> Iterable[Sensor[Any]]:
 
 def get_sensors(path: str) -> Iterable[Sensor[Any]]:
     sensors = []
+    from apd.utils import resolve_config_path
+    path = resolve_config_path()
     for plugin_name, sensor_data in parse_config_file(path).items():
         try:
             class_path = sensor_data.pop("plugin")

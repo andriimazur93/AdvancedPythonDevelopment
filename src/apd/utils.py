@@ -70,4 +70,8 @@ class PythonClassParameterType(ParamType):
         return "PythonClass"
 
 
+def resolve_config_path():
+    from pathlib2 import Path
+    return Path(__file__).parent / "config.cfg"
+
 SensorClassParameter = PythonClassParameterType(Sensor)
