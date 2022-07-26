@@ -61,7 +61,7 @@ def get_sensors_entry_points() -> Iterable[Sensor[Any]]:
     return sensors
 
 
-def get_sensors(path: str) -> Iterable[Sensor[Any]]:
+def get_sensors() -> Iterable[Sensor[Any]]:
     sensors = []
     from apd.utils import resolve_config_path
     path = resolve_config_path()
@@ -97,7 +97,7 @@ def show_sensors(develop: str, config: str) -> None:
             sys.exit(ReturnCodes.BAD_SENSOR_PATH)
     else:
         try:
-            sensors = get_sensors(config)
+            sensors = get_sensors()
         except RuntimeError as error:
             click.secho(str(error), fg="red", bold=True)
             sys.exit(ReturnCodes.BAD_CONFIG)

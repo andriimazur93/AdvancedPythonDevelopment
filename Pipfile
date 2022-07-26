@@ -24,6 +24,8 @@ webtest = "*"
 [packages]
 apd-sensors = {editable = true,path = "."}
 "apd.sensors" = {editable = true, path = "."}
+webtest = "*"
+pathlib2 = "*"
 
 [requires]
 
